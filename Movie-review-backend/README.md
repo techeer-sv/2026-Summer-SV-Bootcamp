@@ -246,8 +246,9 @@ path("api/v1/", include("users.urls")),   # api/v1 접두사는 버전관리용 
 docker compose up -d             # MySQL 컨테이너 띄우기 (포트 3306)
 pip install -r requirements.txt  # (STEP 1에서 했으면 생략) mysqlclient 포함
 ```
-> ⚠️ `Access denied for user 'root'` 가 나면 — 로컬에 이미 MySQL이 3306을 쓰는 중이에요.
-> 로컬 MySQL을 잠깐 끄세요: `brew services stop mysql` (끝나면 `brew services start mysql`).
+> ⚠️ `Access denied for user 'root'` 가 나면 — 로컬에 이미 MySQL이 3306을 쓰는 중이에요. 로컬 MySQL을 잠깐 끄세요:
+> - **맥**: `brew services stop mysql` (끝나면 `brew services start mysql`)
+> - **윈도우**(관리자 cmd): `net stop MySQL80` (서비스명은 MySQL80/MySQL84 등) — 또는 `services.msc`에서 MySQL 중지
 
 ## 2-2. 마이그레이션 → 서버 실행
 
@@ -579,7 +580,7 @@ await axios.post("http://localhost:8000/api/v1/movies", form);
 # 부록 A. 명령어 치트시트
 
 ```bash
-source venv/bin/activate             # 가상환경 켜기
+source venv/bin/activate             # 가상환경 켜기 (윈도우: venv\Scripts\activate)
 pip install -r requirements.txt      # 패키지 설치 (Pillow·mysqlclient 포함)
 docker compose up -d                 # MySQL 띄우기 (내리기: down)
 python manage.py makemigrations      # 모델 변경 기록
@@ -593,10 +594,10 @@ docker compose up -d                 # (MySQL) 띄우기 / down 내리기
 
 | 증상 | 해결 |
 |---|---|
-| `ModuleNotFoundError: django` | 가상환경 안 켬 → `source venv/bin/activate` 후 설치 |
+| `ModuleNotFoundError: django` | 가상환경 안 켬 → `source venv/bin/activate` (윈도우 `venv\Scripts\activate`) 후 설치 |
 | `Cannot use ImageField because Pillow is not installed` | `pip install Pillow` (requirements에 포함) |
-| `Error loading MySQLdb module` | `pip install -r requirements.txt` (mysqlclient 포함). mac 빌드 실패 시 `brew install mysql-client pkg-config` |
-| MySQL 도커인데 `Access denied for user 'root'` | 로컬 MySQL이 3306 점유 → `brew services stop mysql` (끝나면 다시 start) |
+| `Error loading MySQLdb module` | `pip install -r requirements.txt` (mysqlclient 포함). 맥 빌드 실패 시 `brew install mysql-client pkg-config` · 윈도우는 보통 바로 설치(실패 시 MS C++ Build Tools 설치) |
+| MySQL 도커인데 `Access denied for user 'root'` | 로컬 MySQL이 3306 점유 → 맥 `brew services stop mysql` · 윈도우 `net stop MySQL80`(관리자) 또는 services.msc에서 중지 |
 | `Can't connect to MySQL (2003)` | 도커 안 뜸 → `docker compose up -d` |
 | 사진이 안 보임 | 응답 `poster` 가 전체 URL인지, `DEBUG=True` 에서 media 서빙 중인지 확인 |
 | 맞는 주소인데 404 | **URL 끝 슬래시** (`/movies/1/`❌ → `/movies/1`✅) |
