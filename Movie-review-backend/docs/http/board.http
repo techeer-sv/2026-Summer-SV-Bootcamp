@@ -1,0 +1,61 @@
+### 영화 게시판 API 테스트 (VS Code "REST Client" 확장)
+### 끝 슬래시 없음에 주의 (APPEND_SLASH=False)
+@base = http://127.0.0.1:8000/api/v1
+
+### 1. 회원가입
+POST {{base}}/users/signup
+Content-Type: application/json
+
+{ "email": "test@gmail.com", "password": "123" }
+
+### 2. 로그인
+POST {{base}}/users/login
+Content-Type: application/json
+
+{ "email": "test@gmail.com", "password": "123" }
+
+### 3. 카드 생성 — 포스터 이미지 직접 업로드 (multipart/form-data) ★
+### poster 줄의 < ./poster.jpg 는 이 .http 파일과 같은 폴더(docs/http/)의 파일을 올린다.
+### → docs/http/ 에 poster.jpg 를 하나 두고 Send Request!
+POST {{base}}/movies
+Content-Type: multipart/form-data; boundary=MovieBoundary
+
+--MovieBoundary
+Content-Disposition: form-data; name="user_id"
+
+1
+--MovieBoundary
+Content-Disposition: form-data; name="title"
+
+인터스텔라
+--MovieBoundary
+Content-Disposition: form-data; name="content"
+
+인생 영화 강추합니다
+--MovieBoundary
+Content-Disposition: form-data; name="poster"; filename="poster.jpg"
+Content-Type: image/jpeg
+
+< ./poster.jpg
+--MovieBoundary--
+
+### (참고) 사진 없이 텍스트만 올리려면, 위 multipart에서 poster 부분만 빼면 됩니다.
+### /movies 는 multipart/form-data 전용이라 JSON으로는 등록되지 않아요.
+
+### 4. 게시판 목록 (이미지 + 제목만)
+GET {{base}}/movies
+
+### 5. 상세 (제목·사진·글·댓글 전부)
+GET {{base}}/movies/1
+
+### 6. 댓글 작성
+POST {{base}}/movies/1/comments
+Content-Type: application/json
+
+{ "user_id": 1, "content": "동의합니다" }
+
+# ─────────────────────────────────────────────
+# 터미널 curl 로 올릴 때 (파일 직접 업로드):
+#   curl -X POST http://127.0.0.1:8000/api/v1/movies \
+#     -F "user_id=1" -F "title=인터스텔라" -F "content=인생영화" \
+#     -F "poster=@/경로/poster.jpg"

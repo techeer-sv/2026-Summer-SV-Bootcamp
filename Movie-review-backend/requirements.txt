@@ -1,0 +1,6 @@
+Django==5.1.1
+djangorestframework==3.15.2
+drf-spectacular==0.27.2   # Swagger 자동 문서
+python-dotenv==1.0.1      # prod에서 .env 읽기
+Pillow==10.4.0            # 영화 포스터 이미지 업로드(ImageField) 처리
+mysqlclient==2.2.4        # MySQL 드라이버 (mac에서 빌드 실패 시: brew install mysql-client pkg-config)
