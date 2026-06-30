@@ -279,6 +279,17 @@ python manage.py runserver        # http://127.0.0.1:8000  (끄기: Ctrl+C)
 > ⚠️ **초보 주의** — `makemigrations` 만 하고 `migrate` 를 **안 하는** 경우가 정말 많아요.
 > `makemigrations`(설계도 파일 만들기) → `migrate`(DB에 실제 반영) **둘 다** 해야 테이블이 생깁니다.
 
+**이 두 명령이 실제로 하는 일**
+- `makemigrations` : `models.py` 를 읽고 "이런 테이블·컬럼을 만들어라"라는 **설계도 파일**
+  (`movies/migrations/0001_initial.py`)을 만들어요. **아직 DB는 안 건드려요.**
+- `migrate` : 그 설계도 파일대로 **실제 DB에 테이블을 생성/변경**해요. (SQLite면 `db.sqlite3` 안에)
+- 마이그레이션 파일 = **스키마(테이블 구조) 변경 이력.** 깃으로 같이 관리해요.
+  모델을 또 바꾸면 `makemigrations` 가 `0002_...` 처럼 **새 파일을 쌓고**, `migrate` 가 그 차이만 DB에 반영해요.
+
+```
+models.py 수정 ─(makemigrations)→ 0001_initial.py (설계도) ─(migrate)→ DB에 테이블 생성
+```
+
 ## 2-3. Swagger 보는 법
 
 브라우저: **http://127.0.0.1:8000/swagger**
@@ -468,6 +479,19 @@ class MovieDetailSerializer(serializers.ModelSerializer):
 | 목록(게시판) | `MovieListSerializer` | id·title·poster | 카드엔 포스터+제목만. content·comments까지 보내면 **payload↑·DB쿼리↑·렌더링 느려짐** |
 | 생성(입력) | `MovieSerializer` | 입력 필드 | **검증이 핵심**(required·길이·이미지 형식) = write용 |
 | 상세(클릭) | `MovieDetailSerializer` | 전부 + comments | 정보가 많이 필요 = 가장 무거움 |
+
+**실제 응답 차이** (같은 영화 1편인데 보여주는 양이 다름):
+```jsonc
+// GET /movies      (목록 = MovieListSerializer) — 카드에 필요한 3개만, 가볍게
+[ { "id": 1, "title": "인터스텔라", "poster": "http://.../poster.png" } ]
+
+// GET /movies/1    (상세 = MovieDetailSerializer) — 글·댓글까지 전부
+{ "id": 1, "title": "인터스텔라", "content": "인생영화 강추",
+  "poster": "http://.../poster.png",
+  "comments": [ { "id": 1, "content": "동의합니다" } ] }
+```
+- **생성(`MovieSerializer`)** 은 응답보다 **입력 검증**이 핵심: 제목 빠지면 400, 이미지 형식 확인 등.
+  (그래서 "직렬화 = JSON 변환기"라기보다 **검증 레이어**로 이해하는 게 정확해요.)
 
 - **댓글은 nested** : `comments = CommentSerializer(many=True, read_only=True)` → Movie 1 : Comment N 을 응답에 함께.
 - **꼭 3개로 나눠야 하나?** 작은 프로젝트는 하나로도 OK. 하지만 커지면 — 댓글 500개 달린 글 20개를
