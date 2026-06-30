@@ -34,6 +34,12 @@ django-board-handson/
 ```
 > 단계 제목 옆 `(파일명)` = 그 단계에서 만지는 파일.
 
+## 데이터 구조 (ERD)
+
+```
+User                Movie(제목 + 포스터이미지 + 리뷰글) 1 ──< N Comment
+```
+영화 한 편(Movie)에 댓글(Comment) 여러 개. `movies` 앱에 `movies`·`comments` 두 테이블.
 
 ---
 
@@ -63,7 +69,10 @@ python manage.py startapp movies
 
 `settings.py` 한 파일을 셋으로 쪼개요. 개발/배포는 값(DEBUG, DB 등)이 다르니까.
 ```
-config/settings/  ├── base.py (공통)  ├── dev.py (개발=SQLite)  └── prod.py (배포)
+config/settings/
+├── base.py   # 공통 (앱·미들웨어·언어 …)
+├── dev.py    # 개발 = SQLite
+└── prod.py   # 배포 = 실제 DB(.env)
 ```
 > → 왜·어떻게 다른지 자세히: [CONCEPTS.md # settings 분리](CONCEPTS.md#settings-분리)
 
