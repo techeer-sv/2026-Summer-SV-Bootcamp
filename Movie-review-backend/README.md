@@ -7,7 +7,7 @@
 **🟢 1층 — 핵심 실습 (Minimal Path)**
 - [0. 실행](#0-실행) · [1. User API](#1-user-api--회원가입로그인) · [2. Movie API](#2-movie-api--영화-글포스터) · [3. Comment API](#3-comment-api--댓글) · [4. 테스트](#4-테스트-swagger--curl)
 
-**🟡 2층 — 이해 & 확장 **
+**🟡 2층 — 이해 & 확장**
 - [왜 Serializer를 3개로 나눔](#왜-serializer를-3개로-나눔) · [왜 ImageField는 파일로 저장](#왜-imagefield는-파일로-저장하나) · [FK vs IntegerField](#작성자-fk-vs-integerfield) · [settings 분리 이유](#settings-분리-basedevprod-이유) · [WSGI vs ASGI](#wsgi-vs-asgi) · [REST URI·APPEND_SLASH](#rest-uri--append_slash) · [왜 APIView](#왜-apiview) · [확장](#확장-실무로-가면)
 
 **부록** — [치트시트](#부록-a-명령어-치트시트) · [자주 나는 에러](#부록-b-자주-나는-에러)
