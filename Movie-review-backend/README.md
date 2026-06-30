@@ -19,7 +19,9 @@
 
 > 같은 데이터라도 **목록은 가볍게, 상세는 전부** — 화면에 맞춰 시리얼라이저를 나누는 게 핵심 포인트.
 
-## 이 자료는 어떻게 펴볼까요
+## 📑 목차 (이 자료는 어떻게 펴볼까요)
+
+> 실습 중엔 필요한 데로 바로 점프하세요. 제목 클릭 = 해당 섹션 이동.
 
 | 파트 | 무엇을 하나요 |
 | --- | --- |
@@ -259,6 +261,9 @@ python manage.py runserver        # http://127.0.0.1:8000  (끄기: Ctrl+C)
 ```
 > 모델(`models.py`)을 고칠 때마다 `makemigrations` → `migrate` 를 다시 해요.
 
+> ⚠️ **초보 주의** — `makemigrations` 만 하고 `migrate` 를 **안 하는** 경우가 정말 많아요.
+> `makemigrations`(설계도 파일 만들기) → `migrate`(DB에 실제 반영) **둘 다** 해야 테이블이 생깁니다.
+
 ## 2-3. Swagger 보는 법
 
 브라우저: **http://127.0.0.1:8000/swagger**
@@ -321,7 +326,11 @@ class Movie(models.Model):                      # 게시판 한 건 = 영화 한
 
 ## 3-3. 이미지 업로드 세팅 — 사진은 텍스트와 처리가 달라요
 
-이미지는 "파일"이라 네 군데를 손봐야 해요.
+- **🎯 목표** : `poster` 사진을 올리고·저장하고·보여줄 수 있게
+- **✏️ 수정 파일** : `requirements.txt` · `config/settings/base.py` · `config/urls.py`
+- **✅ 해야 할 것** : ① Pillow 설치 ② MEDIA 설정 ③ media 서빙 ④ 요청을 form-data로
+
+아래가 그 네 군데예요. (각 단계의 *왜* 는 설명 참고)
 
 **① 패키지** (`requirements.txt` 에 포함)
 ```bash
@@ -476,8 +485,22 @@ class CommentCreateView(APIView):
         serializer.save(movie=movie)
         return Response(serializer.data, status=201)
 ```
-- 포스터 업로드(multipart)는 DRF 기본 파서가 처리해서 추가 설정이 필요 없어요.
-- 수정(PUT)·삭제(DELETE)는 일부러 뺐어요(미니멀). 필요하면 [4. 확장](#4-확장하기-실무로-가면)에서 추가.
+- 포스터 업로드는 `MovieView`에 `parser_classes=[MultiPartParser]` 로 **multipart 전용** 지정 (Swagger에 파일선택 칸이 떠요).
+- 수정(PUT)·삭제(DELETE)는 미니멀하게 뺐어요. 참고: **PUT = 전체 교체 / PATCH = 일부 수정.** 필요하면 [4. 확장](#4-확장하기-실무로-가면)에서.
+
+> **왜 `APIView`?** DRF엔 `APIView` / `GenericAPIView` / `ViewSet` 이 있어요. 지금은 GET/POST 흐름을
+> 직접 눈으로 보려고 **가장 단순한 `APIView`** 를 써요. 실무에선 반복 CRUD에 `ViewSet` 을 많이 씁니다.
+
+**URL 연결 (`movies/urls.py`)** — 뷰를 만들었으면 URL에 연결해야 동작해요:
+```python
+# movies/urls.py
+urlpatterns = [
+    path("movies", MovieView.as_view()),                                 # GET 목록 · POST 생성
+    path("movies/<int:movie_id>", MovieDetailView.as_view()),            # GET 상세
+    path("movies/<int:movie_id>/comments", CommentCreateView.as_view()), # POST 댓글
+]
+# config/urls.py 에서 연결:  path("api/v1/", include("movies.urls"))
+```
 
 ## 3-7. API 명세 (영화 게시판 — 미니멀)
 
