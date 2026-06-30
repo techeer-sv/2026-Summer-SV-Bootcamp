@@ -507,7 +507,7 @@ class CommentCreateView(APIView):
         return Response(serializer.data, status=201)
 ```
 - 포스터 업로드는 `MovieView`에 `parser_classes=[MultiPartParser]` 로 **multipart 전용** 지정 (Swagger에 파일선택 칸이 떠요).
-- 수정(PUT)·삭제(DELETE)는 미니멀하게 뺐어요. 참고: **PUT = 전체 교체 / PATCH = 일부 수정.** 필요하면 [4. 확장](#4-확장하기-실무로-가면)에서.
+- 수정·삭제 기능은 미니멀하게 뺐어요 (목록·생성·상세 + 댓글만). 필요하면 [4. 확장](#4-확장하기-실무로-가면)에서 추가.
 
 > **왜 `APIView`?** DRF엔 `APIView` / `GenericAPIView` / `ViewSet` 이 있어요. 지금은 GET/POST 흐름을
 > 직접 눈으로 보려고 **가장 단순한 `APIView`** 를 써요. 실무에선 반복 CRUD에 `ViewSet` 을 많이 씁니다.
