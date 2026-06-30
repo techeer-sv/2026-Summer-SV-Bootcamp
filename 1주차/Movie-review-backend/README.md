@@ -94,54 +94,76 @@ URL 끝 슬래시를 안 붙이려고 끔 → `/movies/1`✅ `/movies/1/`❌
 
 # 1. User API — 회원가입/로그인
 
+가장 먼저 **회원(User)** 부터 만들어요. 서비스를 만들면 회원가입/로그인을 제일 먼저 짜게 되거든요.
+그리고 **모델(DB 설계)부터** 짜고 시작해요 — 데이터 구조가 모든 것의 토대라, 뷰(로직)는 그 위에 얹는 거예요.
+
+> 장고엔 기본 회원 기능(`auth`)이 있지만 **일부러 안 써요.** 처음부터 로그인을 빡빡하게 만들면
+> 뒤 기능 테스트가 힘들어져서, 여기선 이메일/비번만 받는 **아주 단순한** User를 직접 만듭니다.
+
 ## 1-1. 모델 (`users/models.py`)
+
+DB에 들어갈 "표(테이블)"를 설계하는 곳. **필드 하나 = 컬럼 하나** 예요.
 ```python
 class User(models.Model):
     email = models.EmailField(max_length=200)
-    password = models.CharField(max_length=200)          # 학습용 평문
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    password = models.CharField(max_length=200)          # 학습용 평문 (실무는 해시)
+    created_at = models.DateTimeField(auto_now_add=True)  # 생성 시각 자동
+    updated_at = models.DateTimeField(auto_now=True)      # 수정 시각 자동
     class Meta:
-        db_table = "users"
+        db_table = "users"                                # 테이블 이름 (복수형)
 ```
+- `auto_now_add` / `auto_now` → 내가 값을 안 넣어도 시각이 **자동으로** 채워져요.
+- `class Meta` 는 그 테이블에 대한 설정(이름 등). 모델을 만들었으면 나중에 `migrate` 로 DB에 반영해요(→ 2번).
 
-## 1-2. 뷰 (`users/views.py`) — APIView + ORM
+## 1-2. 뷰 (`users/views.py`) — 로직을 여기서 처리
+
+뷰는 "요청을 받아서 처리하는" 곳이에요. 장고는 함수형·클래스형 둘 다 되는데, 여기선 **클래스형(APIView)** 을
+써요(가독성이 좋아요). **메서드 이름이 곧 HTTP 메서드** — 회원가입은 `POST` 라 `def post` 안에 로직을 넣어요.
 ```python
 class SignupView(APIView):
     def post(self, request):
-        email = request.data.get("email"); password = request.data.get("password")
-        if not email or not password:
+        email = request.data.get("email"); password = request.data.get("password")   # ① 값 꺼내기
+        if not email or not password:                                                  # ② 빈값 막기
             return Response({"message": "이메일/비번을 입력하세요."}, status=400)
-        if User.objects.filter(email=email).exists():        # 중복 확인 (ORM)
+        if User.objects.filter(email=email).exists():                                  # ③ 중복 확인 (ORM)
             return Response({"message": "이미 가입된 이메일."}, status=400)
-        user = User.objects.create(email=email, password=password)
+        user = User.objects.create(email=email, password=password)                     # ④ 생성
         return Response({"message": "회원가입 성공", "user_id": user.id}, status=201)
+```
+- **①** `request.data` = 요청 body로 들어온 값. `.get()` 으로 email/password를 꺼내요.
+- **②** 사용자가 안 넣을 수도 있으니 기초 예외처리 → **400(잘못된 요청)**.
+- **③** `User.objects.filter(...)` 는 **ORM** — SQL을 직접 안 짜도 장고가 DB 조회를 대신 해줘요. (장고 내장)
+- **④** `User.objects.create(...)` 로 한 줄에 저장. 응답은 `Response(dict)` → DRF가 알아서 **JSON**으로 내려줘요.
 
+```python
 class LoginView(APIView):
-    def post(self, request):
+    def post(self, request):                                                           # 로그인도 POST!
         email = request.data.get("email"); password = request.data.get("password")
         try:
-            user = User.objects.filter(email=email, password=password).get()
+            user = User.objects.filter(email=email, password=password).get()           # 맞으면 그 유저 반환
         except User.DoesNotExist:
-            return Response({"message": "이메일/비번 불일치"}, status=401)
+            return Response({"message": "이메일/비번 불일치"}, status=401)             # 사용자 잘못 = 401
         return Response({"message": "로그인 성공", "user_id": user.id}, status=200)
 ```
-- 응답은 `Response(dict)` → DRF가 알아서 JSON으로 내려줘요. (`JsonResponse` 안 써도 됨)
-- 로그인도 POST. 이메일/비번을 URL에 실으면 노출되니까 body로.
+- **로그인도 POST 예요.** 조회 같지만, 이메일/비번을 URL에 실으면 노출되니까 body(POST)로 보내요.
+- 없는 계정이면 `DoesNotExist` 예외 → 서버 잘못이 아니라 **사용자 입력 잘못이라 401**.
 
-## 1-3. URL (`users/urls.py`)
+## 1-3. URL (`users/urls.py`) — 뷰를 주소에 연결
+
 ```python
 urlpatterns = [
     path("users/signup", SignupView.as_view()),
     path("users/login", LoginView.as_view()),
 ]
 ```
-> signup/login은 둘 다 POST라 예외적으로 동사 사용 → [CONCEPTS.md # REST URI](CONCEPTS.md#rest-uri)
+> REST 원칙은 '동사 말고 명사'지만, signup/login은 **둘 다 POST라 주소로 구분이 안 돼서** 예외로 동사를 써요. → [CONCEPTS.md # REST URI](CONCEPTS.md#rest-uri)
 
 ## 1-4. 진입점 연결 (`config/urls.py`)
+
+요청은 `config/urls.py`(맨 앞 진입점)로 먼저 들어와서, 각 앱의 urls로 넘어가요.
 ```python
 urlpatterns = [
-    path("api/v1/", include("users.urls")),
+    path("api/v1/", include("users.urls")),    # /api/v1/users/... → users 앱이 처리
     path("api/v1/", include("movies.urls")),
     path("swagger", SpectacularSwaggerView.as_view(url_name="schema")),
     path("api/schema", SpectacularAPIView.as_view(), name="schema"),
