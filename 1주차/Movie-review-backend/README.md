@@ -61,7 +61,6 @@ User                Movie(제목 + 포스터이미지 + 리뷰글) 1 ──< N C
 django-board-handson/
 ├── manage.py                 # 장고 명령 입구
 ├── requirements.txt          # 패키지 목록
-├── docker-compose.yml        # MySQL (도커)
 ├── config/                   # 프로젝트 설정·진입점
 │   ├── settings/             #   base.py · dev.py · prod.py (환경 분리)
 │   └── urls.py               #   최상위 URL → 각 앱으로 연결
@@ -146,15 +145,12 @@ config/settings/
 | 항목 | dev (개발) | prod (배포) | 왜 다른가 |
 |---|---|---|---|
 | `DEBUG` | `True` | `False` | 개발은 에러를 자세히 / 운영은 노출되면 보안사고 |
-| DB `HOST` | `127.0.0.1` | `mysqldb` | 백엔드를 **로컬 실행 vs 도커 실행** (아래) |
+| DB | **SQLite** (파일 1개) | 실제 DB (`.env`로 지정) | 개발은 설치 0으로 바로 / 운영은 제대로 된 DB |
 | `ALLOWED_HOSTS` | `*` | 운영 도메인만 | 개발 편의 / 운영 보안 |
 | 비밀값 | 코드에 둬도 OK | `.env` 로 숨김 | 깃에 비번 올리면 유출 |
 
-**DB HOST가 갈리는 지점**:
-```
-[dev]  내 PC에서 runserver  ──▶ 도커 MySQL   HOST = 127.0.0.1  (localhost = 내 컴퓨터)
-[prod] 백엔드도 도커 컨테이너 ──▶ 도커 MySQL   HOST = mysqldb    (컨테이너끼리는 '이름'으로 찾음)
-```
+> 개발은 **SQLite** 라 도커도 DB 서버도 필요 없어요 — `migrate` 하면 `db.sqlite3` 파일이 생기고 끝.
+> 배포(prod)에서만 PostgreSQL·MySQL 같은 실제 DB를 `.env` 로 지정합니다.
 
 **`.env` 를 쓰는 이유(prod)**: `SECRET_KEY`·DB 비번 같은 민감값을 코드에 적어 깃에 올리면 유출돼요.
 그래서 `.env` 에 적고 읽어오며, `.env` 는 `.gitignore` 로 제외합니다. (`.env.example` 만 공유)
@@ -260,19 +256,16 @@ path("api/v1/", include("users.urls")),   # api/v1 접두사는 버전관리용 
 
 > 📚 **더 깊이 보기** — 점프 투 장고(wikidocs)의 "모델/뷰/URL" 장, Django 공식 튜토리얼 1~3부.
 
+> ✅ **여기까지 하면** — 회원(User) API 완성! 바로 다음 **2. 실행 & 테스트**에서 서버 띄우고 회원가입을 눌러보세요.
+
 ---
 
 # 2. 실행 & 테스트
 
-## 2-1. DB 준비 (도커 MySQL)
+## 2-1. DB 준비 (SQLite — 설치·도커 불필요)
 
-```bash
-docker compose up -d             # MySQL 컨테이너 띄우기 (포트 3306)
-pip install -r requirements.txt  # (STEP 1에서 했으면 생략) mysqlclient 포함
-```
-> ⚠️ `Access denied for user 'root'` 가 나면 — 로컬에 이미 MySQL이 3306을 쓰는 중이에요. 로컬 MySQL을 잠깐 끄세요:
-> - **맥**: `brew services stop mysql` (끝나면 `brew services start mysql`)
-> - **윈도우**(관리자 cmd): `net stop MySQL80` (서비스명은 MySQL80/MySQL84 등) — 또는 `services.msc`에서 MySQL 중지
+따로 할 게 없어요. 개발 DB는 **SQLite** 라서, 바로 아래 `migrate` 만 하면
+프로젝트 폴더에 `db.sqlite3` 파일이 자동으로 생깁니다. (DB 서버도, 도커도 X)
 
 ## 2-2. 마이그레이션 → 서버 실행
 
@@ -305,7 +298,9 @@ python manage.py runserver        # http://127.0.0.1:8000  (끄기: Ctrl+C)
 
 ## 2-5. DB에 들어갔는지 확인
 
-- MySQL: DataGrip/DBeaver → host `127.0.0.1`, port `3306`, user `root`, pw `1234`, db `mydatabase`.
+- **가장 쉬움** — `GET /api/v1/movies` (Swagger나 curl). 방금 등록한 게 보이면 DB에 들어간 것.
+- **파일로 직접** — 프로젝트의 `db.sqlite3` 를 DB 뷰어로 열기 (VS Code SQLite 확장, DB Browser for SQLite 등).
+- **관리자 화면** — `python manage.py createsuperuser` 후 `http://127.0.0.1:8000/admin`.
 
 ---
 
@@ -535,6 +530,9 @@ urlpatterns = [
 | 상세(제목·사진·글·댓글) | GET | `/api/v1/movies/{id}` | — | 전체 + `comments` |
 | 댓글 작성 | POST | `/api/v1/movies/{id}/comments` | `{user_id, content}` | 201 |
 
+> ✅ **여기까지 하면** — 영화 등록(사진)·목록·상세·댓글 API 완성! `runserver` 후 Swagger(`/swagger`)나 curl로
+> ① 영화 등록(poster 파일) → ② 목록 GET → ③ 상세 GET(댓글 포함) 순으로 눌러 확인하세요.
+
 
 
 ---
@@ -610,7 +608,7 @@ await axios.post("http://localhost:8000/api/v1/movies", form);
 # 검증 환경
 
 - macOS (Apple Silicon), Python 3.12 · Django 5.1 · DRF 3.15 · Pillow 에서 전 과정 동작 확인.
-- DB는 **MySQL(도커)** 사용.
+- DB는 **SQLite** (도커·DB 서버 불필요).
 - 회원가입·로그인·영화 글 목록·생성·상세·**포스터 이미지 업로드**·목록(이미지+제목)/상세(전부)·댓글·Swagger 통과.
 
 # ⚠️ 이 자료에서 안 다루는 것
@@ -626,13 +624,11 @@ await axios.post("http://localhost:8000/api/v1/movies", form);
 
 ```bash
 source venv/bin/activate             # 가상환경 켜기 (윈도우: venv\Scripts\activate)
-pip install -r requirements.txt      # 패키지 설치 (Pillow·mysqlclient 포함)
-docker compose up -d                 # MySQL 띄우기 (내리기: down)
+pip install -r requirements.txt      # 패키지 설치 (Pillow 포함)
 python manage.py makemigrations      # 모델 변경 기록
-python manage.py migrate             # DB에 반영
+python manage.py migrate             # DB에 반영 (db.sqlite3 생성)
 python manage.py runserver           # 서버 (포트: runserver 8080)
 python manage.py createsuperuser     # 관리자 계정 → /admin
-docker compose up -d                 # (MySQL) 띄우기 / down 내리기
 ```
 
 # 부록 B. 자주 나는 에러
@@ -641,9 +637,6 @@ docker compose up -d                 # (MySQL) 띄우기 / down 내리기
 |---|---|
 | `ModuleNotFoundError: django` | 가상환경 안 켬 → `source venv/bin/activate` (윈도우 `venv\Scripts\activate`) 후 설치 |
 | `Cannot use ImageField because Pillow is not installed` | `pip install Pillow` (requirements에 포함) |
-| `Error loading MySQLdb module` | `pip install -r requirements.txt` (mysqlclient 포함). 맥 빌드 실패 시 `brew install mysql-client pkg-config` · 윈도우는 보통 바로 설치(실패 시 MS C++ Build Tools 설치) |
-| MySQL 도커인데 `Access denied for user 'root'` | 로컬 MySQL이 3306 점유 → 맥 `brew services stop mysql` · 윈도우 `net stop MySQL80`(관리자) 또는 services.msc에서 중지 |
-| `Can't connect to MySQL (2003)` | 도커 안 뜸 → `docker compose up -d` |
 | 사진이 안 보임 | 응답 `poster` 가 전체 URL인지, `DEBUG=True` 에서 media 서빙 중인지 확인 |
 | 맞는 주소인데 404 | **URL 끝 슬래시** (`/movies/1/`❌ → `/movies/1`✅) |
 | 모델 바꿨는데 반영 안 됨 | `makemigrations` → `migrate` 다시 |
