@@ -55,6 +55,27 @@ User                Movie(제목 + 포스터이미지 + 리뷰글) 1 ──< N C
 > **앱 ≠ 테이블.** 앱은 코드 묶음(폴더), 테이블은 그 안 모델이 만든다.
 > `movies` 앱 하나에 `movies`·`comments` **두 테이블**이 들어 있어요.
 
+## 📂 파일 구조 — "어느 파일에 쓰나요?"
+
+```
+django-board-handson/
+├── manage.py                 # 장고 명령 입구
+├── requirements.txt          # 패키지 목록
+├── docker-compose.yml        # MySQL (도커)
+├── config/                   # 프로젝트 설정·진입점
+│   ├── settings/             #   base.py · dev.py · prod.py (환경 분리)
+│   └── urls.py               #   최상위 URL → 각 앱으로 연결
+├── users/                    # 회원 앱
+│   ├── models.py  views.py  urls.py
+└── movies/                   # 영화 게시판 앱
+    ├── models.py             #   Movie · Comment (테이블)
+    ├── serializers.py        #   목록/상세/생성 변환·검증
+    ├── views.py              #   요청 처리 (제일 많이 만짐)
+    └── urls.py               #   /api/v1/movies …
+```
+
+> 💡 각 단계 **제목 옆 `(파일명)`** 이 곧 **그 단계에서 만지는 파일**이에요. 길 잃으면 여기로.
+
 ---
 
 # 0. 환경 세팅
@@ -294,7 +315,7 @@ python manage.py runserver        # http://127.0.0.1:8000  (끄기: Ctrl+C)
 ERD를 **먼저** 그리고, 거기에 맞게 클래스를 설계해 들어가요.
 > 로직 짜다가 즉흥적으로 컬럼을 추가하면 설계가 엉켜요. 그래서 **ERD → 모델 → 로직** 순서.
 
-## 3-2. Movie 모델 — 제목 + 포스터 이미지 + 리뷰 글
+## 3-2. Movie 모델 (`movies/models.py`) — 제목 + 포스터 이미지 + 리뷰 글
 
 ```python
 class Movie(models.Model):                      # 게시판 한 건 = 영화 한 편
@@ -416,7 +437,7 @@ class Comment(models.Model):
 ```
 - 댓글은 **FK로 영화(Movie)에 연결** → Movie 1 : Comment N (1:N).
 
-## 3-5. Serializer — 화면에 맞춰 목록용 / 상세용 분리 ★
+## 3-5. Serializer (`movies/serializers.py`) — 화면에 맞춰 목록용 / 상세용 분리 ★
 
 이 실습의 핵심 포인트. **같은 영화라도** 목록과 상세에서 보여줄 게 달라요.
 
@@ -459,7 +480,7 @@ class MovieDetailSerializer(serializers.ModelSerializer):
   뷰에서 `serializer.save(user=request.user)` 로 채우고 `read_only_fields=["user_id"]` 로 둬요.
   (→ [4. 확장: 인증](#4-확장하기-실무로-가면))
 
-## 3-6. 뷰 — 화면별로 시리얼라이저를 골라 씀 (미니멀 3기능)
+## 3-6. 뷰 (`movies/views.py` · `movies/urls.py`) — 화면별로 시리얼라이저를 골라 씀 (미니멀 3기능)
 
 ```python
 class MovieView(APIView):
