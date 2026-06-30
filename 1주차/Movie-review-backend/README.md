@@ -34,12 +34,6 @@ django-board-handson/
 ```
 > 단계 제목 옆 `(파일명)` = 그 단계에서 만지는 파일.
 
-## 데이터 구조 (ERD)
-
-```
-User                Movie(제목 + 포스터이미지 + 리뷰글) 1 ──< N Comment
-```
-영화 한 편(Movie)에 댓글(Comment) 여러 개. `movies` 앱에 `movies`·`comments` 두 테이블.
 
 ---
 
