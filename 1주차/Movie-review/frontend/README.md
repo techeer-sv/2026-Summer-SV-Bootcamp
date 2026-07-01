@@ -1,3 +1,4 @@
+
 # 🎬 영화 게시판 프론트엔드 (React + Vite + Axios)
 
 > **[backend](../backend) 실습에서 만든 REST API를 화면으로 이어받는 파트**예요.
@@ -6,6 +7,12 @@
 > "왜 이렇게 짰나"가 궁금하면 → **[CONCEPTS.md](CONCEPTS.md)** (Vite, axios 인스턴스, CORS, FormData…)
 
 ## 만들 결과물
+
+<img width="1088" height="693" alt="스크린샷 2026-07-02 오전 4 14 05" src="https://github.com/user-attachments/assets/6f3f8992-cb90-449f-9baa-5b3a03709d11" />
+
+<img width="1083" height="638" alt="스크린샷 2026-07-02 오전 4 13 10" src="https://github.com/user-attachments/assets/0fe51348-d498-41b4-ba29-23df11e5f705" />
+
+
 
 | 경로 | 화면 | 이어받는 백엔드 API |
 |---|---|---|
@@ -21,9 +28,6 @@
 → 개념·"왜" 모음: **[CONCEPTS.md](CONCEPTS.md)**
 
 ## 📂 파일 구조
-
-이 저장소는 **backend(Django) + frontend(React)** 가 함께 있는 모노레포예요.
-아래는 **frontend/** 안쪽 구조입니다. (백엔드는 → [../backend](../backend))
 
 ```
 django-board-handson/
