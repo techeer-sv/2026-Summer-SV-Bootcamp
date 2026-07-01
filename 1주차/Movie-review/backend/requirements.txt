@@ -1,5 +1,6 @@
 Django==5.1.1
 djangorestframework==3.15.2
 drf-spectacular==0.27.2   # Swagger 자동 문서
+django-cors-headers==4.4.0 # 프론트(다른 포트)에서 오는 요청 허용(CORS)
 Pillow==10.4.0            # 영화 포스터 이미지 업로드(ImageField) 처리
 python-dotenv==1.0.1      # (배포 prod에서 .env 읽을 때만 사용)

@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # 외부 라이브러리
     "rest_framework",     # DRF: API를 쉽게 만들게 해줌
     "drf_spectacular",    # Swagger(API 문서) 자동 생성
+    "corsheaders",        # CORS: 프론트(다른 포트)에서 오는 요청 허용
     # 우리가 만든 앱 — 비즈니스 도메인마다 나눈다.
     # (배달 서비스라면 orders, deliveries 처럼. 지금은 users, movies)
     "users",
@@ -49,6 +50,8 @@ INSTALLED_APPS = [
 # [왜 base에 두나] 요청이 거치는 공통 처리 단계 → 환경 무관.
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # CORS는 응답에 헤더를 얹어야 하므로 CommonMiddleware보다 '위'에 둔다.
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -104,6 +107,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 #   예) /api/v1/movies  로 요청해도 /api/v1/movies/ 로 리다이렉트.
 # 끝 슬래시가 붙는 게 싫어서 False 로 끈다. → URL은 끝 슬래시 없이 설계한다.
 APPEND_SLASH = False
+
+# [CORS] 프론트(React/Vite)는 다른 포트(5173)에서 돈다. 브라우저는 다른 출처의
+# 요청을 기본적으로 막으므로(Same-Origin Policy), 서버가 "이 출처는 허용" 이라고
+# 응답 헤더로 알려줘야 한다. Vite 개발 서버 주소를 허용 목록에 넣는다.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+# withCredentials(쿠키/인증정보 포함 요청)를 허용. 프론트 axios의 withCredentials와 짝.
+CORS_ALLOW_CREDENTIALS = True
 
 # DRF가 API 문서를 만들 때 drf-spectacular 스키마를 쓰도록 지정.
 REST_FRAMEWORK = {

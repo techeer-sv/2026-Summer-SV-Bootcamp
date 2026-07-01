@@ -18,21 +18,27 @@
 
 ## 📂 파일 구조
 
+이 저장소는 **backend(Django) + frontend(React)** 가 함께 있는 모노레포예요.
+아래는 **backend/** 안쪽 구조입니다. (프론트는 → [../frontend](../frontend))
+
 ```
 django-board-handson/
-├── manage.py
-├── requirements.txt
-├── config/                   # 프로젝트 설정·진입점
-│   ├── settings/             #   base.py · dev.py · prod.py
-│   └── urls.py
-├── users/                    # 회원 앱 (models · views · urls)
-└── movies/                   # 영화 게시판 앱
-    ├── models.py             #   Movie · Comment
-    ├── serializers.py        #   목록/상세/생성
-    ├── views.py
-    └── urls.py
+├── backend/                  # ← 지금 이 문서(Django REST API)
+│   ├── manage.py
+│   ├── requirements.txt      #   Django · DRF · Pillow · django-cors-headers
+│   ├── db.sqlite3            #   개발용 DB (migrate 시 생성)
+│   ├── config/               #   프로젝트 설정·진입점
+│   │   ├── settings/         #     base.py · dev.py · prod.py  (CORS는 base)
+│   │   └── urls.py
+│   ├── users/                #   회원 앱 (models · views · urls)
+│   └── movies/               #   영화 게시판 앱
+│       ├── models.py         #     Movie · Comment
+│       ├── serializers.py    #     목록/상세/생성
+│       ├── views.py
+│       └── urls.py
+└── frontend/                 # React + Vite + axios (게시판·상세·작성 화면)
 ```
-> 단계 제목 옆 `(파일명)` = 그 단계에서 만지는 파일.
+> 단계 제목 옆 `(파일명)` = 그 단계에서 만지는 파일. 경로는 `backend/` 기준.
 
 ## 데이터 구조 (ERD)
 
@@ -89,6 +95,36 @@ URL 끝 슬래시를 안 붙이려고 끔 → `/movies/1`✅ `/movies/1/`❌
 ## 0-6. Swagger (API 자동 문서)
 
 `drf-spectacular` 로 자동 생성. `config/urls.py` 에 `/swagger`(화면)·`/api/schema`(원본) 연결돼 있어요.
+
+## 0-7. CORS (프론트 연동 준비) 🌐
+
+프론트(React/Vite, 5173)와 백엔드(Django, 8000)는 **포트가 달라요.** 브라우저는 보안상
+"다른 출처(origin)"로 가는 요청을 기본적으로 막습니다(**동일 출처 정책, SOP**). 그래서
+서버가 "이 출처는 허용한다"는 응답 헤더를 붙여줘야 하는데, 그게 **CORS** 예요.
+
+```bash
+pip install django-cors-headers      # requirements.txt 에 포함됨
+```
+```python
+# config/settings/base.py
+INSTALLED_APPS = [ ..., "corsheaders" ]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",   # ★ CommonMiddleware '위'에!
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    ...
+]
+
+CORS_ALLOWED_ORIGINS = [                 # 허용할 프론트 주소
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOW_CREDENTIALS = True            # 쿠키/인증정보 포함 요청 허용 (axios withCredentials와 짝)
+```
+> ⚠️ `CorsMiddleware` 는 **`CommonMiddleware` 보다 위**에 둬야 헤더가 제대로 붙어요.
+> → 왜 필요한지·프론트와 어떻게 짝이 맞는지: [CONCEPTS.md # CORS](CONCEPTS.md#cors)
 
 ---
 
@@ -342,7 +378,7 @@ urlpatterns = [
 | 실시간 | WSGI → ASGI(+Channels) → [CONCEPTS.md # WSGI vs ASGI](CONCEPTS.md#wsgi-vs-asgi) |
 | 프론트 | React(Vite)+axios, 사진은 FormData, CORS |
 
-> 💡 React 프론트 연동까지 동작하는 참고 구현: `~/Downloads/movie-review-handson/`
+> 💡 React 프론트 연동 구현이 이 저장소에 **함께** 있어요 → [../frontend](../frontend) (게시판·상세·작성 화면 + jsonAxios/formAxios)
 
 ---
 
@@ -366,6 +402,7 @@ python manage.py createsuperuser     # /admin
 | 맞는 주소인데 404 | URL 끝 슬래시 (`/movies/1/`❌ → `/movies/1`✅) |
 | Swagger 입력칸/파일선택 안 뜸 | 브라우저 하드 새로고침 `Cmd/Ctrl+Shift+R` |
 | 사진이 안 보임 | 응답 `poster`가 전체 URL인지, `DEBUG=True`에서 media 서빙 중인지 |
+| 프론트에서 `CORS policy ... blocked` | `corsheaders` 설치·`INSTALLED_APPS`·미들웨어 위치 확인, `CORS_ALLOWED_ORIGINS` 에 프론트 주소(5173) 있는지 |
 
 ---
 

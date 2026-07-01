@@ -12,6 +12,7 @@
 - [Serializer를 목록/상세/생성 3개로 나누는 이유](#serializer-분리)
 - [이미지: 저장부터 화면까지](#이미지)
 - [왜 APIView (vs ViewSet)](#왜-apiview)
+- [CORS — 프론트가 API를 부를 수 있게](#cors)
 - [WSGI vs ASGI](#wsgi-vs-asgi)
 - [Django 기본 auth 를 안 쓴 이유](#django-auth)
 
@@ -124,6 +125,54 @@ models.py 수정 ─(makemigrations)→ 0001_initial.py (설계도) ─(migrate)
 ## 왜 APIView
 
 DRF엔 `APIView` / `GenericAPIView` / `ViewSet` 이 있어요. 지금은 GET/POST 흐름을 **직접 눈으로 보려고 가장 단순한 `APIView`**. 실무 반복 CRUD엔 `ViewSet` 을 많이 써요.
+
+## CORS
+
+**한 줄 요약: 브라우저가 "다른 출처"로 가는 요청을 막는데, 서버가 헤더로 "허락"해주는 것.**
+
+### 왜 필요한가
+프론트(`http://localhost:5173`)와 백엔드(`http://localhost:8000`)는 **출처(origin)가 달라요.**
+출처 = `프로토콜 + 호스트 + 포트`. 셋 중 하나만 달라도 "다른 출처"예요. 지금은 **포트**(5173↔8000)가 다르죠.
+
+브라우저에는 **동일 출처 정책(SOP, Same-Origin Policy)** 이라는 보안 규칙이 있어서,
+JS(axios/fetch)가 **다른 출처의 응답을 읽는 걸 기본적으로 막아요.** (악성 사이트가 남의 API를
+몰래 긁어가는 걸 방지) 그래서 서버가 "이 출처는 믿어도 돼"라고 **응답 헤더**로 알려줘야 하는데,
+그 약속이 **CORS(Cross-Origin Resource Sharing)** 예요.
+
+> 참고: 서버끼리(curl·백엔드→백엔드)는 SOP가 없어서 CORS가 필요 없어요. **CORS는 브라우저 규칙**이에요.
+
+### 흐름 (특히 POST/파일 업로드)
+```
+브라우저 ──(1) OPTIONS 프리플라이트: "5173에서 POST 해도 돼?"──▶ Django
+        ◀─(2) 응답 헤더: Access-Control-Allow-Origin: http://localhost:5173 ─┘
+        ──(3) 허용되면 진짜 요청(POST /movies) 전송 ─────────────▶
+```
+- **프리플라이트(preflight)**: JSON POST나 파일 업로드처럼 "단순하지 않은" 요청은, 진짜 요청 전에
+  브라우저가 `OPTIONS` 로 먼저 물어봐요. 여기서 막히면 콘솔에 `CORS policy ... blocked` 가 떠요.
+- 우리가 `django-cors-headers` 를 깔면, 이 `OPTIONS` 응답과 실제 응답에 허용 헤더를 **자동으로** 붙여줘요.
+
+### 우리 설정 (`config/settings/base.py`)
+```python
+INSTALLED_APPS = [ ..., "corsheaders" ]
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",   # ★ CommonMiddleware '위'
+    ...
+]
+CORS_ALLOWED_ORIGINS = ["http://localhost:5173", "http://127.0.0.1:5173"]
+CORS_ALLOW_CREDENTIALS = True
+```
+
+| 설정 | 뜻 | 프론트 쪽 짝 |
+|---|---|---|
+| `CORS_ALLOWED_ORIGINS` | 허용할 출처 목록(**정확히 이 주소만**) | axios `baseURL` 의 호스트/포트 |
+| `CORS_ALLOW_CREDENTIALS` | 쿠키·인증정보 포함 요청 허용 | axios `withCredentials: true` |
+| 미들웨어 위치 | `CommonMiddleware` **위**에 둬야 헤더가 붙음 | — |
+
+- **`localhost` 와 `127.0.0.1` 은 다른 출처예요.** 프론트가 둘 중 무엇으로 접속하든 되게 둘 다 넣었어요.
+- **왜 `CORS_ALLOW_ALL_ORIGINS = True`(전체 허용)를 안 쓰나**: 개발 땐 편하지만 아무 사이트나 우리 API를
+  부를 수 있어 위험해요. 게다가 `withCredentials`(쿠키 포함)와는 전체 허용을 **같이 못 써요.** 그래서 화이트리스트.
+- **CORS ≠ 인증.** CORS는 "브라우저가 읽어도 되나"만 정하지, 로그인/권한과는 별개예요.
 
 ## WSGI vs ASGI
 

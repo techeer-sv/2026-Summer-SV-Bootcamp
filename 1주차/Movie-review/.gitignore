@@ -1,0 +1,27 @@
+# Python / Django (backend/)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.sqlite3
+*.db
+
+# Node / React (frontend/)
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# 업로드된 미디어(포스터 등) — 코드 아니므로 제외
+media/
+
+# 환경변수/비밀 (절대 올리지 않는다)
+.env
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# OMC plugin state
+.omc/
